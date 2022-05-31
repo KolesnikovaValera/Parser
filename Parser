@@ -1,0 +1,42 @@
+import pandas as pd
+def schedule_parser(name):     # 
+    f = open(name, 'r', encoding='utf-8')
+    return f.read()
+    schedule = schedule_parser('test_schedule.inc')
+while 1:  # delete comms
+    left = schedule.find('--')
+    right = left + schedule[left:].find('\n')
+    if left == -1:
+        break
+    schedule = schedule[:left]+ schedule[right:]
+data_clean = schedule.split(sep = '\n') # delete tabulation
+data_clean = [x for x in data_clean if x != ''] # delete empty strings
+data_clean = [string.replace('\t', ' ').replace('  ', ' ').replace('  ', ' ') for string in data_clean] # delete tabulation
+data = pd.DataFrame(columns=['Date','Well name','X','Y','Z','lower connecting block','Open/shut flag of connection','Saturation table number for connection relative permeabilities','Transmissibility factor for the connection', 'Well bore diameter at the connection', 'Effective Kh', 'Skin factor', 'D-factor', 'Direction in which the well penetrates the grid block', 'Pressure equivalent radius'])
+
+cur_date = ''
+cur_mode = 'start'
+for i in data_clean:
+    
+    if cur_mode == 'start':
+        
+        cur_mode = i
+        continue
+    if cur_mode == 'COMPDAT' or cur_mode == 'COMPDATL':
+        if i[0] == '/':
+            
+            cur_mode = 'start'
+            continue
+        string = i.replace('3*', '1 1 1').split(sep = ' ')
+        data = data.append({'Date' : cur_date,'Well name' : string[0],'X' : string[1],'Y' : string[2],'Z' : string[3],'lower connecting block' : string[4],'Open/shut flag of connection' : string[5],'Saturation table number for connection relative permeabilities' : string[6],'Transmissibility factor for the connection' : string[7], 'Well bore diameter at the connection' : string[8], 'Effective Kh' : string[9], 'Skin factor' : string[10], 'D-factor' : string[11], 'Direction in which the well penetrates the grid block' : string[12], 'Pressure equivalent radius' : string[12]}, ignore_index=True)
+        continue
+    if cur_mode == 'DATES':
+        if i == '/':
+            cur_mode = 'start'
+            continue
+        cur_date = i
+        continue
+    if cur_mode == 'WEFAC':
+        cur_mode = 'start'
+        continue
+data                                 # results in DataFrame format
